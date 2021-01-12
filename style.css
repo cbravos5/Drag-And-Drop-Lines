@@ -14,13 +14,15 @@
 
 .draggable-line {
     position: absolute;
-    width: 30%;
-    height: 10px;
+    width: 150px;
+    height: 5px;
     background: brown;
-    top: 40%;
-    
+    transform-origin: left top;
+    top: 10%;
+    left: 40%;
 }
 
-.line {
-    
+#line2 {
+    top: 30%;
+    left: 40%;
 }
