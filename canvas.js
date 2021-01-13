@@ -1,4 +1,4 @@
-
+let container;
 var theElement;
 var diffX, diffY;
 
@@ -26,8 +26,53 @@ const verifyLeftRightReached = left => {
     }
 }
 
-function grabber(event) {
+const getWidth = (X,Y,side,fixed) => {
+    const x1 = [X,Y];
+    const x2 = [side,fixed];
+    return Math.hypot(x1[0] - x2[0],x1[1] - x2[1])
+}
 
+
+function separate(event) {
+    event.preventDefault();
+    
+    theElement = event.currentTarget;
+    var rect = theElement.getBoundingClientRect();
+
+    const posXclicked = event.clientX;
+    const posYclicked = event.clientY;
+
+    const element1Width = Math.floor(getWidth(posXclicked,posYclicked,rect.left,rect.top));
+    const element2Width = Math.ceil(getWidth(posXclicked,posYclicked,rect.right,
+                          rect.bottom));
+
+    const element1 = document.createElement('section');
+    const element2 = document.createElement('section');
+
+    element1.classList.add('draggable-line');
+    element2.classList.add('draggable-line');
+
+    element1.onmousedown = clickhandler;
+    element2.onmousedown = clickhandler;
+
+    element1.style.width = element1Width + "px";
+    element2.style.width = element2Width + "px";
+    
+    element1.style.top = theElement.offsetTop + "px";
+    element2.style.top = posYclicked - container.offsetTop - 5 + "px";
+
+    element1.style.left = theElement.offsetLeft + "px";
+    element2.style.left = posXclicked - container.offsetLeft -5 + "px";
+
+    container.removeChild(theElement);
+
+    container.appendChild(element1);
+    container.appendChild(element2);
+}
+
+
+function grabber(event) {
+    
     // Set the global variable for the element to be moved
     theElement = event.currentTarget;
 
@@ -37,14 +82,13 @@ function grabber(event) {
 
     var posX = parseInt(theElement.offsetLeft);
     var posY = parseInt(theElement.offsetTop);
-    console.log(posX);
+
     // Compute the difference between where it is and 
     //  where the mouse click occurred
 
     diffX = event.clientX - posX;
     diffY = event.clientY - posY;
 
-    console.log(diffX);
 
     // Now register the event handlers for moving and 
     //  dropping the word
@@ -60,6 +104,11 @@ function grabber(event) {
 
 }  //** end of grabber
 
+function clickhandler(event) {
+    event.preventDefault();
+    event.which == 3 ? separate(event) : grabber(event);
+}
+
 // *******************************************************
 
 // The event handler function for moving the word
@@ -69,7 +118,6 @@ function mover(event) {
     
     theElement.style.left = (event.clientX - diffX) + "px";
     theElement.style.top = (event.clientY - diffY) + "px";
-    console.log(theElement.offsetLeft);
     // Prevent propagation of the event
 
     event.stopPropagation();
@@ -91,8 +139,12 @@ function dropper(event) {
 
 window.addEventListener("DOMContentLoaded", () => {
     const lines = document.querySelectorAll('.draggable-line');
+    container = document.querySelector('.draw-container')
     lines.forEach(line => {
-        line.onmousedown = grabber;        
+        line.onmousedown = clickhandler;
     });
     // The event handler function for grabbing the word
+    window.oncontextmenu = () => {
+        return false;
+    }
 });
