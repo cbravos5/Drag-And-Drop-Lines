@@ -1,6 +1,8 @@
 let container;
 var theElement;
 var diffX, diffY;
+let prevX,prevY;
+let rotation;
 
 const verifyTopBottomReached = top => {
     if(top >= 0 && top <= container.clientHeight) {
@@ -30,6 +32,69 @@ const getWidth = (X,Y,side,fixed) => {
     const x1 = [X,Y];
     const x2 = [side,fixed];
     return Math.hypot(x1[0] - x2[0],x1[1] - x2[1])
+}
+
+function getCurrentRotation()  {
+    var st = window.getComputedStyle(theElement, null);
+    var tr = st.getPropertyValue("-webkit-transform") ||
+             st.getPropertyValue("-moz-transform") ||
+             st.getPropertyValue("-ms-transform") ||
+             st.getPropertyValue("-o-transform") ||
+             st.getPropertyValue("transform") ||
+             "fail...";
+  
+    if( tr !== "none") {
+        var values = tr.split('(')[1];
+            values = values.split(')')[0];
+            values = values.split(',');
+        var a = values[0];
+        var b = values[1];
+        var c = values[2];
+        var d = values[3];
+    
+        var scale = Math.sqrt(a*a + b*b);
+    
+        // arc sin, convert from radians to degrees, round
+        /** /
+         var sin = b/scale;
+        var angle = Math.round(Math.asin(sin) * (180/Math.PI));
+        /*/
+        var radians = Math.atan2(b, a);
+        if ( radians < 0 ) {
+            radians += (2 * Math.PI);
+        }
+        var angle = Math.round( radians * (180/Math.PI));
+            /**/
+    } else {
+      var angle = 0;
+    }
+  
+    // works!
+    return angle;
+}
+
+
+function rotate(event) {
+    
+    // Set the global variable for the element to be moved
+    theElement = event.currentTarget;
+
+    rotation = getCurrentRotation();
+    
+    prevX = event.clientX;
+    prevY = event.clientY;
+
+    // Now register the event handlers for moving and 
+    //  dropping the word
+    
+    document.addEventListener("mousemove", rotator, true);
+    document.addEventListener("mouseup", dropperR, true);
+
+    // Stop propagation of the event and stop any default 
+    //  browser action
+
+    event.stopPropagation();
+    event.preventDefault();
 }
 
 
@@ -106,7 +171,11 @@ function grabber(event) {
 
 function clickhandler(event) {
     event.preventDefault();
-    event.which == 3 ? separate(event) : grabber(event);
+    if (event.target.classList.contains('rotate-point')){
+        rotate(event);
+    } else {
+        event.which == 3 ? separate(event) : grabber(event);
+    }    
 }
 
 // *******************************************************
@@ -136,6 +205,31 @@ function dropper(event) {
 
     //  event.stopPropagation();
 }   //** end of dropper
+
+function rotator(event) {
+    diffX = prevX - event.clientX;
+    diffY = prevY - event.clientY;
+    let increaseOrDecrease = diffX + diffY > 0 ? -1 : 1;
+    rotation = increaseOrDecrease*Math.hypot(diffX,diffY)*0.5 + rotation;
+    console.log(rotation);
+
+    if (rotation % 360 > 315 && rotation % 360 < 45) {
+        
+    }
+
+    theElement.style.transform = `rotate(${rotation}deg)`
+    
+    prevX = event.clientX;
+    prevY = event.clientY;
+
+    event.stopPropagation();
+}
+
+function dropperR(event) {
+     // Unregister the event handlers for mouseup and mousemove
+     document.removeEventListener("mouseup", dropperR, true);
+     document.removeEventListener("mousemove", rotator, true);
+}
 
 window.addEventListener("DOMContentLoaded", () => {
     const lines = document.querySelectorAll('.draggable-line');
