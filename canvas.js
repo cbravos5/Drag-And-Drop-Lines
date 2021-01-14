@@ -85,9 +85,6 @@ function getCurrentRotation()  {
 function rotate(event) {
 
     // Set the global variable for the element to be moved
-    theElement = event.currentTarget;
-
-    angle = getCurrentRotation()
 
     var bb = theElement.getBoundingClientRect(),
       t = bb.top,
@@ -119,7 +116,6 @@ function rotate(event) {
 function separate(event) {
     event.preventDefault();
     
-    theElement = event.currentTarget;
     var rect = theElement.getBoundingClientRect();
 
     const posXclicked = event.clientX;
@@ -157,7 +153,6 @@ function separate(event) {
 function grabber(event) {
     
     // Set the global variable for the element to be moved
-    theElement = event.currentTarget;
 
 
     // Determine the position of the word to be grabbed,
@@ -189,9 +184,14 @@ function grabber(event) {
 
 function clickhandler(event) {
     event.preventDefault();
-    if (event.target.classList.contains('rotate-point')){
-        if(event.target.id == 1){
-            console.log('salve');
+    theElement = event.currentTarget;
+    let {target} = event;
+    if (target.classList.contains('rotate-point')){
+        angle = getCurrentRotation();
+        if(target.id == 2){
+            theElement.style.transformOrigin =  'left center';
+        } else {
+            theElement.style.transformOrigin = 'right center';
         }
         rotate(event);
     } else {
@@ -253,6 +253,10 @@ window.addEventListener("DOMContentLoaded", () => {
     window.oncontextmenu = () => {
         return false;
     }
+
+    // window.addEventListener('mousemove', function moving(event){
+    //     console.log(event.clientX - container.offsetLeft, event.clientY - container.offsetTop);
+    // })
 });
 
 
