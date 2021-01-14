@@ -1,8 +1,16 @@
 let container;
 var theElement;
 var diffX, diffY;
-let prevX,prevY;
-let rotation;
+var init, rotate, start, stop,
+    active = false,
+    angle = 0,
+    rotation = 0,
+    startAngle = 0,
+    center = {
+      x: 0,
+      y: 0
+    },
+    R2D = 180 / Math.PI;
 
 const verifyTopBottomReached = top => {
     if(top >= 0 && top <= container.clientHeight) {
@@ -75,15 +83,25 @@ function getCurrentRotation()  {
 
 
 function rotate(event) {
-    
+
     // Set the global variable for the element to be moved
     theElement = event.currentTarget;
 
-    rotation = getCurrentRotation();
-    
-    prevX = event.clientX;
-    prevY = event.clientY;
+    angle = getCurrentRotation()
 
+    var bb = theElement.getBoundingClientRect(),
+      t = bb.top,
+      l = bb.left,
+      h = bb.height,
+      w = bb.width,
+      x, y;
+    center = {
+      x: l + (w / 2),
+      y: t + (h / 2)
+    };``
+    x = event.clientX - center.x;
+    y = event.clientY - center.y;
+    startAngle = R2D * Math.atan2(y, x);
     // Now register the event handlers for moving and 
     //  dropping the word
     
@@ -172,6 +190,9 @@ function grabber(event) {
 function clickhandler(event) {
     event.preventDefault();
     if (event.target.classList.contains('rotate-point')){
+        if(event.target.id == 1){
+            console.log('salve');
+        }
         rotate(event);
     } else {
         event.which == 3 ? separate(event) : grabber(event);
@@ -207,25 +228,16 @@ function dropper(event) {
 }   //** end of dropper
 
 function rotator(event) {
-    diffX = prevX - event.clientX;
-    diffY = prevY - event.clientY;
-    let increaseOrDecrease = diffX + diffY > 0 ? -1 : 1;
-    rotation = increaseOrDecrease*Math.hypot(diffX,diffY)*0.5 + rotation;
-    console.log(rotation);
-
-    if (rotation % 360 > 315 && rotation % 360 < 45) {
-        
-    }
-
-    theElement.style.transform = `rotate(${rotation}deg)`
-    
-    prevX = event.clientX;
-    prevY = event.clientY;
-
-    event.stopPropagation();
+    event.preventDefault();
+    var x = event.clientX - center.x,
+      y = event.clientY - center.y,
+      d = R2D * Math.atan2(y, x);
+    rotation = d - startAngle;
+    theElement.style.transform = "rotate(" + (angle + rotation) + "deg)";
 }
 
 function dropperR(event) {
+    angle += rotation;
      // Unregister the event handlers for mouseup and mousemove
      document.removeEventListener("mouseup", dropperR, true);
      document.removeEventListener("mousemove", rotator, true);
@@ -242,3 +254,52 @@ window.addEventListener("DOMContentLoaded", () => {
         return false;
     }
 });
+
+
+
+
+//   init = function() {
+//     rot.addEventListener("mousedown", start, false);
+//     $(document).bind('mousemove', function(event) {
+//       if (active === true) {
+//         event.preventDefault();
+//         rotate(event);
+//       }
+//     });
+//     $(document).bind('mouseup', function(event) {
+//       event.preventDefault();
+//       stop(event);
+//     });
+//   };
+
+//   start = function(e) {
+//     e.preventDefault();
+//     var bb = this.getBoundingClientRect(),
+//       t = bb.top,
+//       l = bb.left,
+//       h = bb.height,
+//       w = bb.width,
+//       x, y;
+//     center = {
+//       x: l + (w / 2),
+//       y: t + (h / 2)
+//     };``
+//     x = e.clientX - center.x;
+//     y = e.clientY - center.y;
+//     startAngle = R2D * Math.atan2(y, x);
+//     return active = true;
+//   };
+
+//   rotate = function(e) {
+//     e.preventDefault();
+//     var x = e.clientX - center.x,
+//       y = e.clientY - center.y,
+//       d = R2D * Math.atan2(y, x);
+//     rotation = d - startAngle;
+//     return rot.style.webkitTransform = "rotate(" + (angle + rotation) + "deg)";
+//   };
+
+//   stop = function() {
+//     angle += rotation;
+//     return active = false;
+//   };
