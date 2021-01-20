@@ -1,45 +1,66 @@
+//global element for draw container
 let container;
-var theElement;
-var diffX, diffY;
-var init, rotate, start, stop,
-    active = false,
-    angle = 0,
-    rotation = 0,
-    startAngle = 0,
-    center = {
-      x: 0,
-      y: 0
-    },
-    R2D = 180 / Math.PI;
+//element to be changed
+let theElement;
+//position vars
+let diffX, diffY;
+//position track history for resize vars
+let originalXHold, originalXEle, originalWidth;
+let rot, rotationDiagDiff;
 
-const verifyTopBottomReached = top => {
-    if(top >= 0 && top <= container.clientHeight) {
-        line.style.top = top + "px";
-    } else {
-        if(top < 0){
-            line.style.top = "0px";
-        } else {
-            line.style.top = (container.clientHeight - 10) + "px";                
-        }
-    }
-} 
+// const verifyTopBottomReached = top => {
+//     if(top >= 0 && top <= container.clientHeight) {
+//         line.style.top = top + "px";
+//     } else {
+//         if(top < 0){
+//             line.style.top = "0px";
+//         } else {
+//             line.style.top = (container.clientHeight - 10) + "px";                
+//         }
+//     }
+// } 
 
-const verifyLeftRightReached = left => {
-    if(left >= 0 && left <= container.clientWidth) {
-        line.style.left = left + "px";
+// const verifyLeftRightReached = left => {
+//     if(left >= 0 && left <= container.clientWidth) {
+//         line.style.left = left + "px";
+//     } else {
+//         if(left < 0){
+//             line.style.left = "0px";
+//         } else {
+//             line.style.left = (container.clientWidth - line.clientWidth) + "px";                
+//         }
+//     }
+// }
+
+const getDistance = (A,B) => {
+    return Math.hypot(A[0] - B[0],A[1] - B[1]);
+};
+
+const getWidth = (X,Y,rect,line) => {
+    let coord;
+    const tempOffsetLeft = theElement.offsetLeft + container.offsetLeft + 5;
+    const side = Math.abs(rect.left-tempOffsetLeft) <= Math.abs(rect.right-tempOffsetLeft) ?
+                     'left' : 'right';
+    if( line == 1 ){
+        coord = side == 'left' ? [rect.left,rect.top] : [rect.right,rect.top];     
     } else {
-        if(left < 0){
-            line.style.left = "0px";
-        } else {
-            line.style.left = (container.clientWidth - line.clientWidth) + "px";                
-        }
+        coord = side == 'left' ? [rect.right,rect.bottom] : [rect.left,rect.bottom]; 
     }
+    return getDistance([X,Y],coord);
 }
 
-const getWidth = (X,Y,side,fixed) => {
-    const x1 = [X,Y];
-    const x2 = [side,fixed];
-    return Math.hypot(x1[0] - x2[0],x1[1] - x2[1])
+const createAndAppendDots = (line) => {
+    const dot1 = document.createElement('section');
+    const dot2 = document.createElement('section');
+
+    dot1.classList.add('rotate-point')
+    dot2.classList.add('rotate-point')
+
+    dot1.id = 1;
+    dot2.id = 2;
+
+    line.appendChild(dot1);
+    line.appendChild(dot2);
 }
 
 function getCurrentRotation()  {
@@ -81,28 +102,26 @@ function getCurrentRotation()  {
     return angle;
 }
 
+function resize(event) {
+    
+    // Compute the difference between where it is and 
+    //  where the mouse click occurred
+    //rot = getCurrentRotation();
+    //theElement.style.transform = 'rotate(0deg)';
 
-function rotate(event) {
+    rotationDiagDiff = Math.round(150 - (event.clientX - theElement.getBoundingClientRect().left));
+    console.log(rotationDiagDiff);
 
-    // Set the global variable for the element to be moved
+    
+        originalXHold = event.clientX;
+        originalXEle = theElement.offsetLeft;
+        originalWidth = theElement.offsetWidth;
+    
 
-    var bb = theElement.getBoundingClientRect(),
-      t = bb.top,
-      l = bb.left,
-      h = bb.height,
-      w = bb.width,
-      x, y;
-    center = {
-      x: l + (w / 2),
-      y: t + (h / 2)
-    };``
-    x = event.clientX - center.x;
-    y = event.clientY - center.y;
-    startAngle = R2D * Math.atan2(y, x);
     // Now register the event handlers for moving and 
     //  dropping the word
     
-    document.addEventListener("mousemove", rotator, true);
+    document.addEventListener("mousemove", resizer, true);
     document.addEventListener("mouseup", dropperR, true);
 
     // Stop propagation of the event and stop any default 
@@ -112,6 +131,24 @@ function rotate(event) {
     event.preventDefault();
 }
 
+const createLine = (width,rot,top,left) => {
+    //create line
+    const element = document.createElement('section');
+    //add class to line
+    element.classList.add('draggable-line');
+    //add event handler
+    element.onmousedown = clickhandler;
+    //set line width
+    element.style.width = width + "px";
+    //set element top offset
+    element.style.top = top + "px";
+    //set element left offset
+    element.style.left = left + "px";
+    //set element rotation
+    element.style.transform = "rotate("+ (rot) + "deg)";
+    createAndAppendDots(element);
+    return element;
+}
 
 function separate(event) {
     event.preventDefault();
@@ -121,34 +158,22 @@ function separate(event) {
     const posXclicked = event.clientX;
     const posYclicked = event.clientY;
 
-    const element1Width = Math.floor(getWidth(posXclicked,posYclicked,rect.left,rect.top));
-    const element2Width = Math.ceil(getWidth(posXclicked,posYclicked,rect.right,
-                          rect.bottom));
-
-    const element1 = document.createElement('section');
-    const element2 = document.createElement('section');
-
-    element1.classList.add('draggable-line');
-    element2.classList.add('draggable-line');
-
-    element1.onmousedown = clickhandler;
-    element2.onmousedown = clickhandler;
-
-    element1.style.width = element1Width + "px";
-    element2.style.width = element2Width + "px";
+    const element1Width = Math.floor(getWidth(posXclicked,posYclicked,rect,1));
+    const element2Width = Math.ceil(getWidth(posXclicked,posYclicked,rect,2));
     
-    element1.style.top = theElement.offsetTop + "px";
-    element2.style.top = posYclicked - container.offsetTop - 5 + "px";
+    const rot = getCurrentRotation();
 
-    element1.style.left = theElement.offsetLeft + "px";
-    element2.style.left = posXclicked - container.offsetLeft -5 + "px";
+    const element1 = createLine(element1Width,rot,theElement.offsetTop,
+                                theElement.offsetLeft)
+
+    const element2 = createLine(element2Width,rot,posYclicked - container.offsetTop - 5,
+                                posXclicked - container.offsetLeft -5);
 
     container.removeChild(theElement);
 
     container.appendChild(element1);
     container.appendChild(element2);
 }
-
 
 function grabber(event) {
     
@@ -185,15 +210,11 @@ function grabber(event) {
 function clickhandler(event) {
     event.preventDefault();
     theElement = event.currentTarget;
-    let {target} = event;
-    if (target.classList.contains('rotate-point')){
-        angle = getCurrentRotation();
-        if(target.id == 2){
-            theElement.style.transformOrigin =  'left center';
-        } else {
-            theElement.style.transformOrigin = 'right center';
-        }
-        rotate(event);
+    let { target } = event;
+    if (target.classList.contains('move-point')){
+        if(target.dataset.dot == "2"){dot = theElement.querySelector('[data-dot="1"]');}
+        else {dot = theElement.querySelector('[data-dot="2"]');}
+        resize(event);
     } else {
         event.which == 3 ? separate(event) : grabber(event);
     }    
@@ -227,20 +248,26 @@ function dropper(event) {
     //  event.stopPropagation();
 }   //** end of dropper
 
-function rotator(event) {
+function resizer(event) {
     event.preventDefault();
-    var x = event.clientX - center.x,
-      y = event.clientY - center.y,
-      d = R2D * Math.atan2(y, x);
-    rotation = d - startAngle;
-    theElement.style.transform = "rotate(" + (angle + rotation) + "deg)";
-}
+    if (dot.dataset.dot == '1') {
+        const width = originalWidth + (event.clientX - originalXHold);
+        width < 20 ? theElement.style.width = '20px' : theElement.style.width = width + 'px';
+    } else {
+        const width = originalWidth - (event.clientX - originalXHold);
+        if (width < 20) {theElement.style.width = '20px';} 
+        else {
+            theElement.style.width = width + 'px';
+            theElement.style.left = originalXEle + (event.clientX - originalXHold) + 'px';
+        }  
+    };
+};
 
 function dropperR(event) {
-    angle += rotation;
+    //theElement.style.transform = `rotate(${rot}deg)`;
      // Unregister the event handlers for mouseup and mousemove
      document.removeEventListener("mouseup", dropperR, true);
-     document.removeEventListener("mousemove", rotator, true);
+     document.removeEventListener("mousemove", resizer, true);
 }
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -258,52 +285,3 @@ window.addEventListener("DOMContentLoaded", () => {
     //     console.log(event.clientX - container.offsetLeft, event.clientY - container.offsetTop);
     // })
 });
-
-
-
-
-//   init = function() {
-//     rot.addEventListener("mousedown", start, false);
-//     $(document).bind('mousemove', function(event) {
-//       if (active === true) {
-//         event.preventDefault();
-//         rotate(event);
-//       }
-//     });
-//     $(document).bind('mouseup', function(event) {
-//       event.preventDefault();
-//       stop(event);
-//     });
-//   };
-
-//   start = function(e) {
-//     e.preventDefault();
-//     var bb = this.getBoundingClientRect(),
-//       t = bb.top,
-//       l = bb.left,
-//       h = bb.height,
-//       w = bb.width,
-//       x, y;
-//     center = {
-//       x: l + (w / 2),
-//       y: t + (h / 2)
-//     };``
-//     x = e.clientX - center.x;
-//     y = e.clientY - center.y;
-//     startAngle = R2D * Math.atan2(y, x);
-//     return active = true;
-//   };
-
-//   rotate = function(e) {
-//     e.preventDefault();
-//     var x = e.clientX - center.x,
-//       y = e.clientY - center.y,
-//       d = R2D * Math.atan2(y, x);
-//     rotation = d - startAngle;
-//     return rot.style.webkitTransform = "rotate(" + (angle + rotation) + "deg)";
-//   };
-
-//   stop = function() {
-//     angle += rotation;
-//     return active = false;
-//   };

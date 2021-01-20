@@ -17,32 +17,30 @@
     width: 150px;
     height: 5px;
     background: brown;
-    transform-origin: left center;
     top: 10%;
     left: 40%;
     display: flex;
-    transform: rotate(70deg);
+    transform: rotate(0deg);
 }
 
-.rotate-point{
+.move-point{
     background: transparent;
-    width: 7%;
-    height: 0;
-    padding-top: 7%;
+    width: 10px;
+    height: 10px;
     border-radius: 50% 50%;
-    margin-top: -3%; 
+    margin-top: -5px; 
 }
 
-.rotate-point:nth-child(2){
+.move-point:nth-child(2){
     margin-left: auto;
 }
 
-.rotate-point:hover {
+.move-point:hover {
     border-style: solid;
     background: gray;
 }
 
-.rotate-point:active {
+.move-point:active {
     border-style: solid;
      background: black;
 }
