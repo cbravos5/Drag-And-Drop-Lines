@@ -7,6 +7,7 @@ let diffX, diffY;
 //position track history for resize vars
 let originalXHold, originalXEle, originalWidth;
 let rot, rotationDiagDiff;
+let left = false;
 
 // const verifyTopBottomReached = top => {
 //     if(top >= 0 && top <= container.clientHeight) {
@@ -32,10 +33,19 @@ let rot, rotationDiagDiff;
 //     }
 // }
 
+//-----------------------------------------------------------------------------------//
+
+//Calculate the euclidian distance between two points
 const getDistance = (A,B) => {
     return Math.hypot(A[0] - B[0],A[1] - B[1]);
 };
 
+//-----------------------------------------------------------------------------------//
+
+//Calculate width of splited line
+//Because we use clientRect for this operation, we need to verify if the left
+// side postion provided by the rect really is the element left side (rect gets 
+// the left most side as left position, wich can cause problemas if not handled)
 const getWidth = (X,Y,rect,line) => {
     let coord;
     const tempOffsetLeft = theElement.offsetLeft + container.offsetLeft + 5;
@@ -49,20 +59,26 @@ const getWidth = (X,Y,rect,line) => {
     return getDistance([X,Y],coord);
 }
 
+//-----------------------------------------------------------------------------------//
+
+//Create line dots and append to it
 const createAndAppendDots = (line) => {
     const dot1 = document.createElement('section');
     const dot2 = document.createElement('section');
 
-    dot1.classList.add('rotate-point')
-    dot2.classList.add('rotate-point')
+    dot1.classList.add('move-point')
+    dot2.classList.add('move-point')
 
-    dot1.id = 1;
-    dot2.id = 2;
+    dot1.dataset.dot = '1';
+    dot2.dataset.dot = '2';
 
     line.appendChild(dot1);
     line.appendChild(dot2);
 }
 
+//-----------------------------------------------------------------------------------//
+
+//Get the current rotation of the line
 function getCurrentRotation()  {
     var st = window.getComputedStyle(theElement, null);
     var tr = st.getPropertyValue("-webkit-transform") ||
@@ -102,22 +118,24 @@ function getCurrentRotation()  {
     return angle;
 }
 
+//-----------------------------------------------------------------------------------//
+
+//Function to assign global values and handlers when resizing
 function resize(event) {
     
-    // Compute the difference between where it is and 
-    //  where the mouse click occurred
-    //rot = getCurrentRotation();
-    //theElement.style.transform = 'rotate(0deg)';
+    //Get current line rotation
     rot = getCurrentRotation();
+    //Set rotation to 0 for resizing functions work properly
     theElement.style.transform = 'rotate(0deg)';
     
+    //Get original positions
     originalXHold = event.clientX;
     originalXEle = theElement.offsetLeft;
     originalWidth = theElement.offsetWidth;
     
 
-    // Now register the event handlers for moving and 
-    //  dropping the word
+    // Now register the event handlers for resing and 
+    //  dropping the line
     
     document.addEventListener("mousemove", resizer, true);
     document.addEventListener("mouseup", dropperR, true);
@@ -129,6 +147,9 @@ function resize(event) {
     event.preventDefault();
 }
 
+//-----------------------------------------------------------------------------------//
+
+//Auxiliar function to create a line with dots
 const createLine = (width,rot,top,left) => {
     //create line
     const element = document.createElement('section');
@@ -148,38 +169,47 @@ const createLine = (width,rot,top,left) => {
     return element;
 }
 
+//-----------------------------------------------------------------------------------//
+
+//Function to assign global values and handlers when spliting
 function separate(event) {
     event.preventDefault();
-    
+
+    //Get global postion values of the element
     var rect = theElement.getBoundingClientRect();
 
+    //Get global postion of the click
     const posXclicked = event.clientX;
     const posYclicked = event.clientY;
 
+    //Get width of the two lines based on the distances between mouse clicked position
+    // and the line extremities
     const element1Width = Math.floor(getWidth(posXclicked,posYclicked,rect,1));
     const element2Width = Math.ceil(getWidth(posXclicked,posYclicked,rect,2));
     
+    //Get line rotation
     const rot = getCurrentRotation();
 
+    //Create lines
     const element1 = createLine(element1Width,rot,theElement.offsetTop,
                                 theElement.offsetLeft)
+    const element2 = createLine(element2Width,rot,posYclicked - 1,
+                                posXclicked - 1);
 
-    const element2 = createLine(element2Width,rot,posYclicked - container.offsetTop - 5,
-                                posXclicked - container.offsetLeft -5);
-
+    //Remove original line from container
     container.removeChild(theElement);
-
+    
+    //Add splited line
     container.appendChild(element1);
     container.appendChild(element2);
 }
 
+//-----------------------------------------------------------------------------------//
+
+//Function to assign global values and handlers when moving
 function grabber(event) {
     
     // Set the global variable for the element to be moved
-
-
-    // Determine the position of the word to be grabbed,
-    //  first removing the units from left and top
 
     var posX = parseInt(theElement.offsetLeft);
     var posY = parseInt(theElement.offsetTop);
@@ -192,7 +222,7 @@ function grabber(event) {
 
 
     // Now register the event handlers for moving and 
-    //  dropping the word
+    //  dropping the line
     
     document.addEventListener("mousemove", mover, true);
     document.addEventListener("mouseup", dropper, true);
@@ -203,25 +233,29 @@ function grabber(event) {
     event.stopPropagation();
     event.preventDefault();
 
-}  //** end of grabber
+}
 
+//-----------------------------------------------------------------------------------//
+
+//Function to handle different types of actions
+//If the target have a 'move-point' class, then the operation is resize
+//If not, we have to check if the right or left button was clicked
+//If left was clicked, then we move the object, otherwise, split de line
 function clickhandler(event) {
     event.preventDefault();
     theElement = event.currentTarget;
     let { target } = event;
     if (target.classList.contains('move-point')){
-        if(target.dataset.dot == "2"){dot = theElement.querySelector('[data-dot="1"]');}
-        else {dot = theElement.querySelector('[data-dot="2"]');}
+        left = target.dataset.dot == '1' ? true : false;
         resize(event);
     } else {
         event.which == 3 ? separate(event) : grabber(event);
     }    
 }
 
-// *******************************************************
+//-----------------------------------------------------------------------------------//
 
-// The event handler function for moving the word
-
+//Move line function
 function mover(event) {
     // Compute the new position, add the units, and move the word
     
@@ -230,11 +264,11 @@ function mover(event) {
     // Prevent propagation of the event
 
     event.stopPropagation();
-}  //** end of mover
+} 
 
-// *********************************************************
-// The event handler function for dropping the word
+//-----------------------------------------------------------------------------------//
 
+//Dropper for moving operation
 function dropper(event) {
 
     // Unregister the event handlers for mouseup and mousemove
@@ -246,41 +280,61 @@ function dropper(event) {
     //  event.stopPropagation();
 }   //** end of dropper
 
+//-----------------------------------------------------------------------------------//
+
+//Resizer for mouse movement
 function resizer(event) {
     event.preventDefault();
-    if (dot.dataset.dot == '1') {
-        const width = originalWidth + (event.clientX - originalXHold);
-        width < 20 ? theElement.style.width = '20px' : theElement.style.width = width + 'px';
-    } else {
+    //Different sides needs different treatments
+    //If right side dot is moved, only the width needs to be changed
+    //If left side dot is moved, the position has to be changed too 
+    if (left) {
         const width = originalWidth - (event.clientX - originalXHold);
         if (width < 20) {theElement.style.width = '20px';} 
         else {
             theElement.style.width = width + 'px';
             theElement.style.left = originalXEle + (event.clientX - originalXHold) + 'px';
-        }  
+        };  
+    } else {
+        const width = originalWidth + (event.clientX - originalXHold);
+        width < 20 ? theElement.style.width = '20px' : theElement.style.width = width + 'px';
     };
 };
 
+//-----------------------------------------------------------------------------------//
+
+//Dropper for resizing function
 function dropperR(event) {
+    //Assign rotation before the transformation
     theElement.style.transform = `rotate(${rot}deg)`;
-    //theElement.style.transform = `rotate(${rot}deg)`;
-     // Unregister the event handlers for mouseup and mousemove
-     document.removeEventListener("mouseup", dropperR, true);
-     document.removeEventListener("mousemove", resizer, true);
+    // Unregister the event handlers for mouseup and mousemove
+    document.removeEventListener("mouseup", dropperR, true);
+    document.removeEventListener("mousemove", resizer, true);
 }
 
+//-----------------------------------------------------------------------------------//
+
+function makePoligon(value) {
+    console.log(value);
+}
+
+//-----------------------------------------------------------------------------------//
+
+//Assign listeners and make queries after content loaded
 window.addEventListener("DOMContentLoaded", () => {
     const lines = document.querySelectorAll('.draggable-line');
+    const input = document.querySelector('.input-field');
     container = document.querySelector('.draw-container')
+    //assign handler for every type of action
     lines.forEach(line => {
         line.onmousedown = clickhandler;
     });
-    // The event handler function for grabbing the word
+    
+    input.oninput = function() {makePoligon(input.value)};
+
+    //context menu (right click) = off
     window.oncontextmenu = () => {
         return false;
     }
 
-    // window.addEventListener('mousemove', function moving(event){
-    //     console.log(event.clientX - container.offsetLeft, event.clientY - container.offsetTop);
-    // })
 });
