@@ -108,14 +108,12 @@ function resize(event) {
     //  where the mouse click occurred
     //rot = getCurrentRotation();
     //theElement.style.transform = 'rotate(0deg)';
-
-    rotationDiagDiff = Math.round(150 - (event.clientX - theElement.getBoundingClientRect().left));
-    console.log(rotationDiagDiff);
-
+    rot = getCurrentRotation();
+    theElement.style.transform = 'rotate(0deg)';
     
-        originalXHold = event.clientX;
-        originalXEle = theElement.offsetLeft;
-        originalWidth = theElement.offsetWidth;
+    originalXHold = event.clientX;
+    originalXEle = theElement.offsetLeft;
+    originalWidth = theElement.offsetWidth;
     
 
     // Now register the event handlers for moving and 
@@ -264,6 +262,7 @@ function resizer(event) {
 };
 
 function dropperR(event) {
+    theElement.style.transform = `rotate(${rot}deg)`;
     //theElement.style.transform = `rotate(${rot}deg)`;
      // Unregister the event handlers for mouseup and mousemove
      document.removeEventListener("mouseup", dropperR, true);
