@@ -348,6 +348,7 @@ function dropperR(event) {
 //the next line top-left position
 const getPoligonLinePosition = (op1, op2, lastLine) => {
   let left, top;
+
   //get number of pixels to move
   const width = Math.round(lastLine.getBoundingClientRect().width);
   const height = Math.round(lastLine.getBoundingClientRect().height);
@@ -368,11 +369,13 @@ const makePoligon = (sides, ops) => {
   //Calculate sum of degrees
   const degSum = 360 / sides;
   let degV = 0;
+
   //Append first line to DOM
   let posV = ["35vh", "45vw"];
   let lastLine = createLine(wid + "px", degV, posV[0], posV[1]);
   container.appendChild(lastLine);
   degV = degV + degSum;
+
   //General operation for the rest of lines
   //get positions, create line and append
   for (let i = 0; i < sides - 1; i++) {
@@ -400,10 +403,12 @@ window.addEventListener("DOMContentLoaded", () => {
   const lines = document.querySelectorAll(".draggable-line");
   const input = document.querySelector(".input-field");
   container = document.querySelector(".draw-container");
+
   //assign handler for every type of action
   lines.forEach((line) => {
     line.onmousedown = clickhandler;
   });
+
   insertLine(1);
   input.oninput = function () {
     insertLine(input.value);
